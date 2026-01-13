@@ -10,13 +10,14 @@ global IsShiftSticky := false
 global HasMoved := false 
 global IsHookActive := false 
 
-UpdateStatus() {
+; 核心提示逻辑：导航模式常驻，编辑模式消失
+UpdateStatus(msg := "") {
     if (IsNavMode) {
-        status := IsShiftSticky ? "🔥 选中模式 (VISUAL)" : "💡 移动模式 (NORMAL)"
-        ToolTip(status)
+        ; 如果有临时消息（如误触警告）则显示消息，否则显示当前模式状态
+        status := msg ? msg : (IsShiftSticky ? "🔥 选中模式 (VISUAL)" : "💡 移动模式 (NORMAL)")
+        ToolTip(status) ; 常驻显示，不设计时器
     } else {
-        ToolTip("✅ 编辑模式")
-        SetTimer(() => ToolTip(), 800)
+        ToolTip() ; 立即清除 ToolTip，确保编辑模式无干扰
     }
 }
 
@@ -26,15 +27,15 @@ ExitNav(shouldCollapse := true) {
     global IsShiftSticky := false
     global IsHookActive := false
     
-    Send("{Shift Up}{Ctrl Up}") ; 确保状态彻底重置
+    Send("{Shift Up}{Ctrl Up}") 
     Sleep(20)
     
     if (shouldCollapse && HasMoved) {
-        Send("{Left}") ; 采用左移坍缩，防止跳行
+        Send("{Left}") 
     }
     
     global HasMoved := false
-    UpdateStatus()
+    UpdateStatus() ; 清除提示
 }
 
 ; ==========================================================
@@ -46,13 +47,15 @@ CapsLock::
     if (IsNavMode) {
         global IsShiftSticky := true 
         global HasMoved := false 
-        UpdateStatus()
+        UpdateStatus() ; 开启常驻提示
     } else {
         ExitNav(HasMoved ? true : false) 
     }
 }
 
-; 组合键微调
+; ==========================================================
+; 【通用组合键】 (CapsLock + IJKL/UO)
+; ==========================================================
 CapsLock & i::Send("{Blind}{Up}")
 CapsLock & k::Send("{Blind}{Down}")
 CapsLock & j::Send("{Blind}{Left}")
@@ -60,9 +63,6 @@ CapsLock & l::Send("{Blind}{Right}")
 CapsLock & u::Send("{Blind}{Home}")
 CapsLock & o::Send("{Blind}{End}")
 
-; ==========================================================
-; 【全域快捷键】
-; ==========================================================
 ^i::Send(IsNavMode && IsShiftSticky ? "+{Up 5}" : "{Up 5}")
 ^k::Send(IsNavMode && IsShiftSticky ? "+{Down 5}" : "{Down 5}")
 ^j::Send(IsNavMode && IsShiftSticky ? "^+{Left}" : "^{Left}")
@@ -75,41 +75,55 @@ CapsLock & o::Send("{Blind}{End}")
 ; ==========================================================
 #HotIf IsNavMode
 
-; --- 独立按键逻辑 (只有在非 Hook 状态下触发) ---
+; --- A. 独立功能键 (非等待状态触发) ---
 #HotIf IsNavMode and !IsHookActive
 
-; 1. 选中整行
 h:: {
     global HasMoved := true 
-    Send("{Shift Up}")
-    Send("{Home 2}") 
+    Send("{Shift Up}{Home 2}") 
     Sleep(20)
     Send("+{End}") 
+    UpdateStatus()
 }
 
-; 2. 【新增】不断向后选中单词
 w:: {
     global HasMoved := true
-    ; 根据当前是否是 Visual 模式决定是否带 Shift
     Send(IsShiftSticky ? "^+{Right}" : "^{Right}")
+    UpdateStatus()
 }
 
-; 3. 【新增】不断向前选中单词
 b:: {
     global HasMoved := true
     Send(IsShiftSticky ? "^+{Left}" : "^{Left}")
+    UpdateStatus()
+}
+
+; --- B. 拦截所有未定义字母键并常驻警告 ---
+a::
+e::
+f::
+g::
+m::
+p:: 
+q::
+s::
+t::
+r:: ; r 原本是重做，现在也纳入拦截（或根据需要保留）
+{
+    UpdateStatus("⚠️ 模式锁定中：请使用指令或 Caps 退出")
 }
 
 #HotIf IsNavMode
-; --- 核心 1：多态 d 键 ---
+
+; --- C. 核心操作符 ---
 d:: {
     if (HasMoved) {
         Send("{Del}")
         ExitNav(false)
         return
     }
-    
     global IsHookActive := true 
+    UpdateStatus("⏳ 等待指令 (h/w/b)...")
     ih := InputHook("L1 T0.5", "{Esc}{CapsLock}")
     ih.Start(), ih.Wait()
     global IsHookActive := false 
@@ -125,18 +139,19 @@ d:: {
     } else if (ih.Input == "b") { 
         Send("^{BackSpace}")
         ExitNav(false)
+    } else {
+        UpdateStatus() ; 如果超时或按错，恢复正常常驻提示
     }
 }
 
-; --- 核心 2：多态 c 键 ---
 c:: {
     if (HasMoved) {
         Send("^c")
         ExitNav(true)
         return
     }
-    
     global IsHookActive := true
+    UpdateStatus("⏳ 等待指令 (h/w/b)...")
     ih := InputHook("L1 T0.5", "{Esc}{CapsLock}")
     ih.Start(), ih.Wait()
     global IsHookActive := false
@@ -152,10 +167,12 @@ c:: {
     } else if (ih.Input == "b") { 
         Send("{Shift Up}^+{Left}^c")
         ExitNav(true)
+    } else {
+        UpdateStatus()
     }
 }
 
-; --- 基础移动 ---
+; --- D. 基础移动 ---
 *i:: {
     global HasMoved := true
     Send("{Blind}" (IsShiftSticky ? "+" : "") "{Up}")
@@ -172,33 +189,27 @@ c:: {
     global HasMoved := true
     Send("{Blind}" (IsShiftSticky ? "+" : "") "{Right}")
 }
-*u:: { 
+*u:: {
     global HasMoved := true
     Send("{Blind}" (IsShiftSticky ? "+" : "") "{Home}")
 }
-*o:: { 
+*o:: {
     global HasMoved := true
     Send("{Blind}" (IsShiftSticky ? "+" : "") "{End}")
 }
 
-; --- 统一动作 ---
+; --- E. 动作逻辑 ---
 y::
-^c:: { 
-    Send("^c")       
-    Sleep(100)       
-    ExitNav(true)        
-}
-
-p::
-^v:: { 
-    Send("^v")
-    ExitNav(false)
+^c:: {
+    Send("^c")
+    Sleep(100)
+    ExitNav(true)
 }
 
 x::
-^x:: { 
+^x:: {
     Send("^x")
-    ExitNav(false) 
+    ExitNav(false)
 }
 
 v:: {
@@ -213,8 +224,8 @@ n:: {
     ExitNav(false)
 }
 
-z::Send("^z")
-r::Send("^y")
+z:: (Send("^z"), ExitNav(false))
+
 Esc::ExitNav(true)
 
 #HotIf
