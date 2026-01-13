@@ -14,26 +14,27 @@ UpdateStatus() {
         status := IsShiftSticky ? "🔥 选中模式 (VISUAL)" : "💡 移动模式 (NORMAL)"
         ToolTip(status)
     } else {
-        ToolTip("✅ 已回归编辑模式")
+        ToolTip("✅ 编辑模式")
         SetTimer(() => ToolTip(), 800)
     }
 }
 
-; 【核心清理函数】增加参数：shouldCollapse (是否需要按右键合并选区)
+; 【核心修复】退出导航模式
 ExitNav(shouldCollapse := true) {
     global IsNavMode := false
     global IsShiftSticky := false
-    global HasMoved := false
     
     Send("{Shift Up}") 
     Sleep(20)
     
-    ; 如果是复制(y)或手动退出，需要 Right 来合并选区
-    ; 如果是删除(d)或粘贴(p)，选区已经没了，不需要 Right
-    if (shouldCollapse) {
-        Send("{Right}") 
+    ; 修复点：只有在真正动过、且需要坍缩选区时才按键
+    if (shouldCollapse && HasMoved) {
+        ; 为了防止 h 选中整行后跳到下一行，我们采用“左移再右移”或者简单的“左移”
+        ; 这里建议用 {Left}，它会停留在选中区域的开头，最稳且不跳行
+        Send("{Left}") 
     }
     
+    global HasMoved := false
     UpdateStatus()
 }
 
@@ -45,10 +46,11 @@ CapsLock::
     global IsNavMode := !IsNavMode
     if (IsNavMode) {
         global IsShiftSticky := true 
-        global HasMoved := false 
+        global HasMoved := false ; 进场重置
         UpdateStatus()
     } else {
-        ExitNav(true) ; 手动退出需要合并选区
+        ; 修复点：如果进场后没动过，退出时不坍缩选区，防止光标平移
+        ExitNav(HasMoved ? true : false) 
     }
 }
 
@@ -75,7 +77,7 @@ CapsLock & o::Send("{Blind}{End}")
 ; ==========================================================
 #HotIf IsNavMode
 
-; --- 直接按 h 选中整行 ---
+; --- 选中整行 ---
 h:: {
     global HasMoved := true 
     Send("{Shift Up}")
@@ -86,18 +88,14 @@ h:: {
 
 ; --- 核心 1：多态 d 键 ---
 d:: {
-    ; 情况 1：如果有选区（比如按了 h 之后）
     if (HasMoved) {
-        Send("{Del}")       ; 直接删除选区，不需要 ^x (剪切) 那么重
-        ExitNav(false)      ; <--- 关键：删除后不需要 Right 换行
+        Send("{Del}")
+        ExitNav(false) ; 删除后不需要坍缩动作
         return
     }
-
-    ; 情况 2：原地等待 dh, dw, db
     ih := InputHook("L1 T0.5", "{Esc}{CapsLock}")
     ih.Start(), ih.Wait()
-    
-    if (ih.Input == "h") {        ; dh: 依然保留删除整行的“宏”
+    if (ih.Input == "h") {
         Send("{Shift Up}{Home 2}")
         Sleep(20)
         Send("+{End}{BackSpace}{Delete}")
@@ -111,24 +109,24 @@ d:: {
     }
 }
 
-; --- 核心 2：多态 c 键 ---
+; --- 核心 2：多态 c 键 (Copy 系列) ---
 c:: {
     if (HasMoved) {
         Send("^c")
-        ExitNav(true) ; 复制完文字还在，需要 Right 合并选区
+        ExitNav(true) ; 复制完需要坍缩
         return
     }
     ih := InputHook("L1 T0.5", "{Esc}{CapsLock}")
     ih.Start(), ih.Wait()
-    if (ih.Input == "h") {        ; ch: 复制整行
+    if (ih.Input == "h") {
         Send("{Shift Up}{Home 2}")
         Sleep(20)
         Send("+{End}^c")
         ExitNav(true) 
-    } else if (ih.Input == "w") { ; cw: 复制后一个词
+    } else if (ih.Input == "w") { 
         Send("{Shift Up}^+{Right}^c")
         ExitNav(true)
-    } else if (ih.Input == "b") { ; cb: 复制前一个词
+    } else if (ih.Input == "b") { 
         Send("{Shift Up}^+{Left}^c")
         ExitNav(true)
     }
@@ -171,7 +169,7 @@ y::
 p::
 ^v:: { 
     Send("^v")
-    ExitNav(false) ; 粘贴后不需要 Right
+    ExitNav(false)
 }
 
 x::
