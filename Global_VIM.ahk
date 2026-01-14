@@ -47,22 +47,17 @@ UpdateStatus(msg := "") {
     
     if (IsNavMode) {
         if (IsShiftSticky) {
-            ; 【Visual 模式】
-            ; 托盘显示自定义图标
+            ; 【Visual 模式】(默认状态)
             TrySetModeIcon(ICON_DIR "selection.ico", "🔥 Visual Mode (选中)")
-            ; 鼠标变成系统十字准星 (+)
-            ChangeSystemCursor(32515) 
+            ChangeSystemCursor(32515) ; 十字准星
         } else {
-            ; 【Normal 模式】
-            ; 托盘显示自定义图标
+            ; 【Normal 模式】(按 v 切换)
             TrySetModeIcon(ICON_DIR "arrows.ico", "💡 Normal Mode (移动)")
-            ; 鼠标变成系统移动图标 (✥)
-            ChangeSystemCursor(32646) 
+            ChangeSystemCursor(32646) ; 移动图标
         }
     } else {
         ; 【编辑模式】
         TrySetModeIcon(ICON_DIR "pencil.ico", "模式: 编辑")
-        ; 恢复默认鼠标
         RestoreSystemCursor()
         ToolTip() 
     }
@@ -81,17 +76,12 @@ TrySetModeIcon(iconPath, tipText) {
 ; 4. 系统光标控制 (Windows API)
 ; ==========================================================
 ChangeSystemCursor(CursorID) {
-    ; 1. 加载系统标准光标 (不需要路径，直接用 ID)
     CursorHandle := DllCall("LoadCursor", "Ptr", 0, "Int", CursorID, "Ptr")
-    
-    ; 2. 替换掉 "标准箭头" (32512) 和 "工字标" (32513)
-    ; CopyImage 是为了复制一份句柄，避免系统光标被销毁
     DllCall("SetSystemCursor", "Ptr", DllCall("CopyImage", "Ptr", CursorHandle, "Int", 2, "Int", 0, "Int", 0, "Int", 0, "Ptr"), "Int", 32512)
     DllCall("SetSystemCursor", "Ptr", DllCall("CopyImage", "Ptr", CursorHandle, "Int", 2, "Int", 0, "Int", 0, "Int", 0, "Ptr"), "Int", 32513)
 }
 
 RestoreSystemCursor() {
-    ; SPI_SETCURSORS = 0x0057 (重置系统光标)
     DllCall("SystemParametersInfo", "Int", 0x0057, "Int", 0, "Ptr", 0, "Int", 0)
 }
 
@@ -159,6 +149,7 @@ CapsLock::
 {
     global IsNavMode := !IsNavMode
     if (IsNavMode) {
+        ; 【核心设置】默认开启 Visual Mode (选中模式)
         global IsShiftSticky := true  
         global HasMoved := false  
         UpdateStatus() 
@@ -312,7 +303,15 @@ x::
 v:: {
     global IsShiftSticky := !IsShiftSticky
     global HasMoved := false 
-    if (!IsShiftSticky) Send("{Shift Up}{Right}")
+    
+    if (!IsShiftSticky) {
+        ; 【逻辑修复】从 Visual 切换到 Normal 时：
+        ; 释放 Shift 并向右一格，取消当前选区，回到纯移动状态
+        Send("{Shift Up}{Right}")
+    }
+    ; 从 Normal 切换到 Visual 时：
+    ; 什么都不用做，下一按移动键会自动带上 Shift
+    
     UpdateStatus() 
 }
 
