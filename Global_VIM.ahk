@@ -10,15 +10,37 @@ global IsShiftSticky := false
 global HasMoved := false 
 global IsHookActive := false 
 
-; 核心提示逻辑：导航模式常驻，编辑模式消失
+; 定义图标基础路径
+global ICON_DIR := A_ScriptDir "\icon\assets\"
+
+; 初始更新一次图标
+UpdateStatus()
+
+; --- 核心：更新状态提示与托盘图标 ---
 UpdateStatus(msg := "") {
     if (IsNavMode) {
-        ; 如果有临时消息（如误触警告）则显示消息，否则显示当前模式状态
-        status := msg ? msg : (IsShiftSticky ? "🔥 选中模式 (VISUAL)" : "💡 移动模式 (NORMAL)")
-        ToolTip(status) ; 常驻显示，不设计时器
+        if (IsShiftSticky) {
+            TrySetModeIcon(ICON_DIR "selection.ico", "🔥 选中模式 (VISUAL)")
+            status := msg ? msg : "🔥 选中模式 (VISUAL)"
+        } else {
+            TrySetModeIcon(ICON_DIR "arrows.ico", "💡 移动模式 (NORMAL)")
+            status := msg ? msg : "💡 移动模式 (NORMAL)"
+        }
+        ToolTip(status)
     } else {
-        ToolTip() ; 立即清除 ToolTip，确保编辑模式无干扰
+        TrySetModeIcon(ICON_DIR "pencil.ico", "模式: 编辑")
+        ToolTip() 
     }
+}
+
+; 辅助函数：安全设置图标
+TrySetModeIcon(iconPath, tipText) {
+    if FileExist(iconPath) {
+        TraySetIcon(iconPath)
+    } else {
+        TraySetIcon("*") 
+    }
+    A_IconTip := tipText
 }
 
 ; 【核心清理】退出导航模式
@@ -35,7 +57,7 @@ ExitNav(shouldCollapse := true) {
     }
     
     global HasMoved := false
-    UpdateStatus() ; 清除提示
+    UpdateStatus() 
 }
 
 ; ==========================================================
@@ -45,9 +67,9 @@ CapsLock::
 {
     global IsNavMode := !IsNavMode
     if (IsNavMode) {
-        global IsShiftSticky := true 
-        global HasMoved := false 
-        UpdateStatus() ; 开启常驻提示
+        global IsShiftSticky := true  
+        global HasMoved := false  
+        UpdateStatus() 
     } else {
         ExitNav(HasMoved ? true : false) 
     }
@@ -75,7 +97,7 @@ CapsLock & o::Send("{Blind}{End}")
 ; ==========================================================
 #HotIf IsNavMode
 
-; --- A. 独立功能键 (非等待状态触发) ---
+; --- A. 独立功能键 ---
 #HotIf IsNavMode and !IsHookActive
 
 h:: {
@@ -98,7 +120,7 @@ b:: {
     UpdateStatus()
 }
 
-; --- B. 拦截所有未定义字母键并常驻警告 ---
+; --- B. 拦截所有未定义字母键 ---
 a::
 e::
 f::
@@ -108,7 +130,7 @@ p::
 q::
 s::
 t::
-r:: ; r 原本是重做，现在也纳入拦截（或根据需要保留）
+r:: 
 {
     UpdateStatus("⚠️ 模式锁定中：请使用指令或 Caps 退出")
 }
@@ -117,6 +139,8 @@ r:: ; r 原本是重做，现在也纳入拦截（或根据需要保留）
 
 ; --- C. 核心操作符 ---
 d:: {
+    ; 【修复关键点】必须先声明 global，否则 if (HasMoved) 会因为变量未定义而报错
+    global HasMoved 
     if (HasMoved) {
         Send("{Del}")
         ExitNav(false)
@@ -140,11 +164,13 @@ d:: {
         Send("^{BackSpace}")
         ExitNav(false)
     } else {
-        UpdateStatus() ; 如果超时或按错，恢复正常常驻提示
+        UpdateStatus() 
     }
 }
 
 c:: {
+    ; 【修复关键点】同上
+    global HasMoved
     if (HasMoved) {
         Send("^c")
         ExitNav(true)
@@ -216,7 +242,7 @@ v:: {
     global IsShiftSticky := !IsShiftSticky
     global HasMoved := false 
     if (!IsShiftSticky) Send("{Shift Up}{Right}")
-    UpdateStatus()
+    UpdateStatus() 
 }
 
 n:: {
@@ -224,7 +250,11 @@ n:: {
     ExitNav(false)
 }
 
-z:: (Send("^z"), ExitNav(false))
+; 【修复关键点】给 z 键加上大括号，避免单行表达式的解析错误
+z:: { 
+    Send("^z")
+    ExitNav(false)
+}
 
 Esc::ExitNav(true)
 
