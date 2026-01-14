@@ -235,24 +235,35 @@ c:: {
         return
     }
     global IsHookActive := true
-    UpdateStatus("⏳ 等待指令...")
-    ih := InputHook("L1 T0.5", "{Esc}{CapsLock}")
+    UpdateStatus("⏳ c- (指令...)")
+    ih := InputHook("L1 T0.3", "{Esc}{CapsLock}")
     ih.Start(), ih.Wait()
     global IsHookActive := false
     
-    if (ih.Input == "h") {
+    if (ih.Input == "h") {          ; [ch] 复制整行
         Send("{Shift Up}{Home 2}")
-        Sleep(20)
-        Send("+{End}^c")
+        Send("+{Down}")
+        Sleep(10)
+        Send("^c")
         ExitNav(true) 
-    } else if (ih.Input == "w") { 
-        Send("{Shift Up}^+{Right}^c")
+    } else if (ih.Input == "w") {    ; [cw] 复制单词
+        Send("{Shift Up}^+{Right}")
+        Sleep(10)
+        Send("^c")
         ExitNav(true)
-    } else if (ih.Input == "b") { 
-        Send("{Shift Up}^+{Left}^c")
+    } else if (ih.Input == "b") {    ; [cb] 复制前一个单词
+        Send("{Shift Up}^+{Left}")
+        Sleep(10)
+        Send("^c")
         ExitNav(true)
     } else {
-        UpdateStatus()
+        global HasMoved
+        if (HasMoved) {
+            Send("^c")
+            ExitNav(true)
+        } else {
+            UpdateStatus()
+        }
     }
 }
 
@@ -263,7 +274,45 @@ y::
     ExitNav(true)
 }
 
-x::
+x:: {
+    global HasMoved
+    if (HasMoved) {
+        Send("^x")
+        ExitNav(false)
+        return
+    }
+    global IsHookActive := true
+    UpdateStatus("⏳ x- (指令...)")
+    ih := InputHook("L1 T0.3", "{Esc}{CapsLock}")
+    ih.Start(), ih.Wait()
+    global IsHookActive := false
+    
+    if (ih.Input == "h") {          ; [xh] 剪切整行
+        Send("{Shift Up}{Home 2}")
+        Send("+{Down}")
+        Sleep(10)
+        Send("^x")
+        ExitNav(false)
+    } else if (ih.Input == "w") {    ; [xw] 剪切单词
+        Send("{Shift Up}^+{Right}")
+        Sleep(10)
+        Send("^x")
+        ExitNav(false)
+    } else if (ih.Input == "b") {    ; [xb] 剪切前一个单词
+        Send("{Shift Up}^+{Left}")
+        Sleep(10)
+        Send("^x")
+        ExitNav(false)
+    } else {
+        global HasMoved
+        if (HasMoved) {
+            Send("^x")
+            ExitNav(false)
+        } else {
+            UpdateStatus()
+        }
+    }
+}
 ^x:: {
     Send("^x")
     ExitNav(false)
