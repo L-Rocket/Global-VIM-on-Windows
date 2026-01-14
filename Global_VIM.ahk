@@ -105,10 +105,21 @@ TypeOut(text, minDelay := 20, maxDelay := 60) {
 }
 
 $Tab:: {
+    ; 1. 如果在导航模式，直接发 Tab
     if (IsNavMode) {
         Send("{Tab}")
         return
     }
+
+    ; 2. 【修复终端冲突】如果是终端窗口，直接发 Tab，不执行跳出检测
+    ; ConsoleWindowClass = CMD / PowerShell (Legacy)
+    ; CASCADIA_HOSTING_WINDOW_CLASS = Windows Terminal
+    if (WinActive("ahk_class ConsoleWindowClass") || WinActive("ahk_class CASCADIA_HOSTING_WINDOW_CLASS")) {
+        Send("{Tab}")
+        return
+    }
+
+    ; 3. 常规编辑器中的跳出逻辑
     savedClip := ClipboardAll()
     A_Clipboard := ""
     Send("+{Right}^c")
