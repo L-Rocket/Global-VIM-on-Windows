@@ -1,0 +1,48 @@
+name: Build and Release Tanto
+
+on:
+  push:
+    tags:
+      - 'v*' # 当你推送标签如 v1.0.0 时触发
+  workflow_dispatch: # 允许你随时手动点击运行
+
+jobs:
+  build:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Ahk2Exe
+        shell: powershell
+        run: |
+          # 下载官方编译器包 (包含 Ahk2Exe 和基础 bin 文件)
+          Invoke-WebRequest -Uri "https://github.com/AutoHotkey/Ahk2Exe/releases/latest/download/Ahk2Exe.zip" -OutFile "Ahk2Exe.zip"
+          Expand-Archive -Path "Ahk2Exe.zip" -DestinationPath "./compiler"
+          
+          # 下载 AHK v2 解释器（用于编译 v2 脚本的基准）
+          # 注意：Tanto 需要 v2，我们下载 v2 的压缩包并提取 64位二进制
+          Invoke-WebRequest -Uri "https://www.autohotkey.com/download/ahk-v2.zip" -OutFile "ahkv2.zip"
+          Expand-Archive -Path "ahkv2.zip" -DestinationPath "./ahkv2"
+
+      - name: Compile Tanto.exe
+        shell: cmd
+        run: |
+          # 使用 /in 指向源码，/out 指向输出名，/icon 指向你的图标资产
+          # /bin 指定使用 AHK v2 64位作为编译基准
+          ".\compiler\Ahk2Exe.exe" /in "tanto.ahk" /out "Tanto.exe" /icon "icon\assets\arrows.ico" /bin ".\ahkv2\AutoHotkey64.exe"
+
+      - name: Release Tanto
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          name: Tanto Release ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+          files: |
+            Tanto.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
