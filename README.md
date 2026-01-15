@@ -1,119 +1,125 @@
+<div align="center">
+
 # Tanto 🗡️
 
-**Tanto** 是一款专为 Windows 开发者设计的全局效率工具。基于 AutoHotkey v2.0 构建，它将 Vim 的核心操作逻辑引入全局环境，并贯彻 **“一击脱离”（One-shot）** 的编辑哲学。
+[English](README.md) | [简体中文](README_CN.md)
 
-> **💡 核心哲学：** 模式切换不应成为负担。进入模式是为了完成特定的原子任务（选中、复制、删除），任务一旦触发，脚本立即自动回归编辑模式。
+</div>
 
----
+**Tanto** is a global efficiency tool designed specifically for Windows developers. Built on AutoHotkey v2.0, it brings the core operational logic of Vim into the global environment while enforcing a **"One-shot"** editing philosophy.
 
-## 📥 下载与安装 (Installation)
-
-**无需安装，开箱即用：**
-
-1. 前往 **[Releases 页面](../../releases)**。
-2. 下载最新的 `Tanto.exe`。
-3. 双击运行即可（建议设为开机自启）。
-
-> ⚡ **自动化构建**：本项目使用 GitHub Actions 自动编译，确保您下载的二进制文件与源码完全一致，安全透明。
+> **💡 Core Philosophy:** Mode switching should not be a burden. Entering a mode is for completing specific atomic tasks (selecting, copying, deleting). Once the task is triggered, the script immediately and automatically returns to editing mode.
 
 ---
 
-## ✨ 核心特性 (v2.0 Updated)
+## 📥 Installation
 
-* **⚡ 进场即选中 (Default Visual Mode)**
-    * 单击 `CapsLock` 默认进入 **Visual 模式**，配合 `IJKL` 实现瞬时代码抓取。无需像传统 Vim 那样先按 `v` 再移动。
+**No installation required. Works out of the box.**
 
-* **🖱️ 原生光标沉浸体验**
-    * **Visual 模式**：光标变为 **十字准星 (✚)**，暗示精确框选。
-    * **Normal 模式**：光标变为 **四向箭头 (✥)**，暗示快速移动。
-    * *拒绝遮挡视线的气泡提示，回归 Windows 原生手感。*
+1. Go to the **[Releases Page](../../releases)**.
+2. Download the latest `Tanto.exe`.
+3. Double-click to run (Setting it to run on startup is recommended).
 
-* **🎯 一击脱离 (One-shot Action)**
-    * 所有的操作（复制 `c`、删除 `d`、剪切 `x`）执行后，脚本会自动**释放逻辑状态并回归 Insert 模式**，无需手动按 Esc。
-
-* **🤖 Typeout 模拟输入 (带刹车)**
-    * 在 Normal 模式下按 `t`，可将剪贴板内容以“人手敲击”的方式逐字输入。
-    * **防灾难机制**：完美绕过终端/虚拟机的**禁止粘贴**限制。若输入内容有误，**按住 `Esc` 可立即紧急停止输入**。
-
-* **📦 便携化设计**
-    * 图标资源自动打包进 EXE，单文件随身携带，无需担心资源丢失。
+> ⚡ **Automated Build**: This project uses GitHub Actions for automated compilation, ensuring the binary you download is perfectly consistent with the source code, transparent, and secure.
 
 ---
 
-## ⌨️ 快捷键指南
+## ✨ Core Features (v2.0 Updated)
 
-### 1. 模式切换与状态
+* **⚡ Select on Entry (Default Visual Mode)**
+    * Clicking `CapsLock` enters **Visual Mode** by default. Combined with `IJKL`, this allows for instant code selection. No need to press `v` and then move like in traditional Vim.
 
-| 按键 | 模式 | 光标状态 | 说明 |
+* **🖱️ Native Immersive Cursor Experience**
+    * **Visual Mode**: Cursor becomes a **Crosshair (✚)**, implying precise selection.
+    * **Normal Mode**: Cursor becomes a **Four-way Arrow (✥)**, implying rapid movement.
+    * *No intrusive pop-ups or bubbles that block your vision. Returns to the native Windows feel.*
+
+* **🎯 One-shot Action**
+    * All operations (Copy `c`, Delete `d`, Cut `x`) automatically **release the logic state and return to Insert Mode** immediately after execution. No need to manually press Esc.
+
+* **🤖 Typeout Simulation (With Safety Brake)**
+    * Press `t` in Normal Mode to type out the clipboard content character by character (simulating human keystrokes).
+    * **Disaster Prevention**: Perfectly bypasses "paste disabled" restrictions in terminals or virtual machines. If the input is incorrect, **hold `Esc` to emergency stop**.
+
+* **📦 Portable Design**
+    * Icon resources are automatically packed into the EXE. It is a single file you can take anywhere without worrying about missing resources.
+
+---
+
+## ⌨️ Key Bindings
+
+### 1. Modes & Status
+
+| Key | Mode | Cursor | Description |
 | :--- | :--- | :--- | :--- |
-| `CapsLock` | **Visual (默认)** | **✚ 十字准星** | 移动时自动按住 Shift (选中) |
-| `v` | Visual / Normal | **✥ 四向箭头** | 在“选中”与“纯移动”模式间切换 |
-| `Esc` | Edit | **↖ 标准箭头** | 强制退出导航，回到编辑模式 |
+| `CapsLock` | **Visual (Default)** | **✚ Crosshair** | Automatically holds Shift while moving (Selecting). |
+| `v` | Visual / Normal | **✥ Four-way** | Toggles between "Selection" and "Pure Movement" modes. |
+| `Esc` | Edit | **↖ Arrow** | Force quit navigation and return to Edit Mode. |
 
-### 2. 基础位移 (HJKL ++)
+### 2. Basic Movement (HJKL ++)
 
-| 按键 | 功能 | 说明 |
+| Key | Function | Description |
 | :--- | :--- | :--- |
-| `i` / `k` / `j` / `l` | 上 / 下 / 左 / 右 | 根据当前模式决定是否带选中 |
-| `u` / `o` | Home / End | 快速跳转行首/行尾 |
-| `h` | **High-Impact Select** | 模拟 `Shift+Home` x2 + `End`，**全选当前整行** |
-| `Ctrl` + `i/k` | 垂直大跳 | 跨越 5 行移动 |
-| `Ctrl` + `j/l` | 水平大跳 | 按单词 (Word) 移动 |
+| `i` / `k` / `j` / `l` | Up / Down / Left / Right | Moves with or without selection based on current mode. |
+| `u` / `o` | Home / End | Quickly jump to the Start/End of the line. |
+| `h` | **High-Impact Select** | Simulates `Shift+Home` x2 + `End`. **Selects the entire current line.** |
+| `Ctrl` + `i/k` | Vertical Jump | Moves across 5 lines. |
+| `Ctrl` + `j/l` | Horizontal Jump | Moves by Word. |
 
-### 3. 操作符连招 (Operator Pending)
+### 3. Operator Pending
 
-当进入模式后**未产生位移**时，按下 `d` (删除)、`c` (复制) 或 `x` (剪切) 会进入等待状态（光标保持不变），此时可接以下指令：
+When entering a mode **without movement**, pressing `d` (Delete), `c` (Copy), or `x` (Cut) enters a waiting state (cursor remains unchanged). You can then follow up with these commands:
 
-| 指令后缀 | 动作描述 | 典型场景 |
+| Suffix | Action | Typical Scenario |
 | :--- | :--- | :--- |
-| `h` | **House (Whole Line)** | 操作 **整行** (自动闭合空隙) |
-| `w` | **Word (Right)** | 操作 **右侧单词** |
-| `b` | **Back (Left)** | 操作 **左侧单词** |
+| `h` | **House (Whole Line)** | Operates on the **Whole Line** (Automatically closes gaps). |
+| `w` | **Word (Right)** | Operates on the **Right Word**. |
+| `b` | **Back (Left)** | Operates on the **Left Word**. |
 
-> **组合示例**：
-> * `dh`: 删除整行
-> * `cw`: 复制当前单词
-> * `xb`: 剪切前一个单词
+> **Combo Examples**:
+> * `dh`: Delete the entire line.
+> * `cw`: Copy the current word.
+> * `xb`: Cut the previous word.
 >
-> **注**：如果已经产生了移动（HasMoved），按 `d/c/x` 则直接对**当前选区**生效。
+> **Note**: If movement **HasMoved** (you already selected text), pressing `d/c/x` applies immediately to the **current selection**.
 
-### 4. 辅助功能 (Utility)
+### 4. Utility Functions
 
-* **`t` (Typeout)**：(Normal模式下) 将剪贴板内容模拟键盘敲入。**按住 `Esc` 停止**。
-* **`Tab`**：发送标准 Tab 键（保留键位，防止冲突）。
-* **`CapsLock + IJKL`**：任何时候均可作为标准方向键使用（非 VIM 逻辑，纯映射）。
-* **`n`**：发送 `End` + `Enter` (快速换行)。
+* **`t` (Typeout)**: (In Normal Mode) Types clipboard content as keystrokes. **Hold `Esc` to stop.**
+* **`Tab`**: Sends a standard Tab key (Retains key function to prevent conflict).
+* **`CapsLock + IJKL`**: Can be used as standard arrow keys at any time (Non-VIM logic, pure mapping).
+* **`n`**: Sends `End` + `Enter` (Quick new line).
 
 ---
 
-## 🛠️ 开发与贡献
+## 🛠️ Development & Contribution
 
-如果您想修改源码或自行编译：
+If you want to modify the source code or compile it yourself:
 
-1.  克隆仓库：
+1.  Clone the repository:
     ```bash
     git clone [https://github.com/L-Rocket/Tanto.git](https://github.com/L-Rocket/Tanto.git)
     ```
-2.  确保安装 [AutoHotkey v2.0+](https://www.autohotkey.com/)。
-3.  直接运行 `tanto.ahk` 进行调试。
-4.  **图标资源**：位于 `icon/assets/` 目录，编译脚本会自动引用。
+2.  Ensure [AutoHotkey v2.0+](https://www.autohotkey.com/) is installed.
+3.  Run `tanto.ahk` directly for debugging.
+4.  **Icons**: Located in the `icon/assets/` directory. The compilation script references them automatically.
 
 ---
 
-## ⚠️ 常见问题
+## ⚠️ FAQ
 
-* **Q: 为什么按 `c` 没反应？**
-    * A: 如果没选中东西，`c` 处于等待指令状态（等待 `h/w/b`）。如果你想强制复制当前行，请用 `ch`。
+* **Q: Why doesn't pressing `c` do anything?**
+    * A: If nothing is selected, `c` enters the "Operator Pending" state (waiting for `h/w/b`). If you want to force copy the current line, use `ch`.
 
-* **Q: Typeout 停不下来怎么办？**
-    * A: **按住 Esc 键**，脚本会检测并强制中断循环。
+* **Q: The Typeout function won't stop!**
+    * A: **Hold the Esc key**. The script detects this and will force an interrupt of the loop.
 
-* **Q: 在某些游戏或管理员软件中失效？**
-    * A: 请尝试以“管理员身份”运行脚本/EXE，因为普通权限的 AHK 无法控制高权限窗口。
+* **Q: It doesn't work in some games or Admin software?**
+    * A: Please try running the script/EXE as "Administrator". Standard user permissions in AHK cannot control high-privileged windows.
 
 ---
 
-## 📄 许可证 (License)
+## 📄 License
 
-本项目基于 **GNU GPLv3** 协议开源。
+This project is open-sourced under the **GNU GPLv3** license.
 [GNU General Public License v3.0](LICENSE)
