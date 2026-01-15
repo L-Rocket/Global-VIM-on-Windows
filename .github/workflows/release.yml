@@ -3,46 +3,41 @@ name: Build and Release Tanto
 on:
   push:
     tags:
-      - 'v*' # 当推送 v1.0.0 等标签时触发
-  workflow_dispatch: # 允许你在 Actions 页面手动点击运行
+      - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
     runs-on: windows-latest
     permissions:
-      contents: write # 必须赋予写权限才能创建 Release
+      contents: write
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Environment (Compiler & Base)
+      - name: Setup Environment
         shell: powershell
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # 授权给 gh 命令行工具
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          Write-Host "Downloading Ahk2Exe..."
-          # 使用 gh 工具自动查找并下载最新的 Ahk2Exe 压缩包，重命名为 Ahk2Exe.zip
+          Write-Host "1. Downloading Ahk2Exe from GitHub..."
+          # 下载编译器
           gh release download --repo AutoHotkey/Ahk2Exe --pattern "*.zip" --output "Ahk2Exe.zip" --clobber
           Expand-Archive -Path "Ahk2Exe.zip" -DestinationPath "./compiler" -Force
           
-          Write-Host "Downloading AutoHotkey v2 Base Files..."
-          # 下载 AHK v2 解释器文件 (用于作为编译基准)
-          Invoke-WebRequest -Uri "https://www.autohotkey.com/download/ahk-v2.zip" -OutFile "ahkv2.zip"
+          Write-Host "2. Downloading AutoHotkey v2 Base Files from GitHub..."
+          # 修复点：从 GitHub Release 下载 AHK v2，不再访问 autohotkey.com
+          # 匹配模式 "AutoHotkey_*.zip" 可以找到类似 AutoHotkey_2.0.18.zip 的文件
+          gh release download --repo AutoHotkey/AutoHotkey --pattern "AutoHotkey_*.zip" --output "ahkv2.zip" --clobber
           Expand-Archive -Path "ahkv2.zip" -DestinationPath "./ahkv2" -Force
 
       - name: Compile Tanto.exe
         shell: cmd
         run: |
           echo Compiling...
-          
-          REM 说明：
-          REM /in  -> 输入你的源码
-          REM /out -> 输出的 EXE 名字
-          REM /icon -> 使用你的图标
-          REM /bin -> 指定 AHK v2 64位解释器作为基准 (这是编译 v2 的关键)
-          
-          ".\compiler\Ahk2Exe.exe" /in "tanto.ahk" /out "Tanto.exe" /icon "icon\assets\arrows.ico" /bin ".\ahkv2\AutoHotkey64.exe"
+          REM 这里的路径逻辑不用变
+          ".\compiler\Ahk2Exe.exe" /in "tanto.ahk" /out "Tanto.exe" /icon "icon\assets\pencil.ico" /bin ".\ahkv2\AutoHotkey64.exe"
 
       - name: Release to GitHub
         uses: softprops/action-gh-release@v1
