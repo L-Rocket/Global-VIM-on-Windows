@@ -29,8 +29,11 @@ jobs:
 
       - name: Generate icon assets
         shell: pwsh
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: "utf-8"
         run: |
-          python icon/convert.py
+          uv run --python python icon/convert.py
 
       - name: Setup Python
         uses: actions/setup-python@v5

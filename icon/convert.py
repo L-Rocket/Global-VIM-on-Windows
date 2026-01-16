@@ -1,8 +1,15 @@
 import os
+import sys
+import io
 from svglib.svglib import svg2rlg
 from reportlab.graphics import renderPM
 from PIL import Image
-import io
+
+# Force UTF-8 output to avoid Windows code page issues in CI
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+if hasattr(sys.stderr, "reconfigure"):
+    sys.stderr.reconfigure(encoding="utf-8")
 
 def svg_to_ico(svg_path, ico_path):
     """
