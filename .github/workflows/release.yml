@@ -20,26 +20,6 @@ jobs:
         with:
           python-version: '3.10'
 
-      - name: Install icon dependencies (uv)
-        shell: pwsh
-        run: |
-          python -m pip install --upgrade pip
-          pip install uv
-          uv pip install --system pillow svglib reportlab
-
-      - name: Generate icon assets
-        shell: pwsh
-        env:
-          PYTHONUTF8: "1"
-          PYTHONIOENCODING: "utf-8"
-        run: |
-          uv run --python python icon/convert.py
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.10'
-
       - name: Install icon dependencies
         shell: pwsh
         run: |
@@ -48,6 +28,9 @@ jobs:
 
       - name: Generate icon assets
         shell: pwsh
+        env:
+          PYTHONUTF8: "1"
+          PYTHONIOENCODING: "utf-8"
         run: |
           python icon/convert.py
 
@@ -57,13 +40,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           Write-Host "1. Downloading Ahk2Exe from GitHub..."
-          # 下载编译器
           gh release download --repo AutoHotkey/Ahk2Exe --pattern "*.zip" --output "Ahk2Exe.zip" --clobber
           Expand-Archive -Path "Ahk2Exe.zip" -DestinationPath "./compiler" -Force
           
           Write-Host "2. Downloading AutoHotkey v2 Base Files from GitHub..."
-          # 修复点：从 GitHub Release 下载 AHK v2，不再访问 autohotkey.com
-          # 匹配模式 "AutoHotkey_*.zip" 可以找到类似 AutoHotkey_2.0.18.zip 的文件
           gh release download --repo AutoHotkey/AutoHotkey --pattern "AutoHotkey_*.zip" --output "ahkv2.zip" --clobber
           Expand-Archive -Path "ahkv2.zip" -DestinationPath "./ahkv2" -Force
 
@@ -72,12 +52,13 @@ jobs:
         run: |
           echo Compiling...
           REM 这里的路径逻辑不用变
-          ".\compiler\Ahk2Exe.exe" /in "tanto.ahk" /out "Tanto.exe" /icon "icon\assets\pencil.ico" /bin ".\ahkv2\AutoHotkey64.exe"
+          ".\compiler\Ahk2Exe.exe" /in "tanto.ahk" /out "Tanto.exe" /icon "icon\assets\sword.ico" /bin ".\ahkv2\AutoHotkey64.exe"
 
       - name: Release to GitHub
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
           files: Tanto.exe
+          fail_on_unmatched_files: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
