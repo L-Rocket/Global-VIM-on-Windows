@@ -25,7 +25,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install uv
-          uv pip install pillow svglib reportlab
+          uv pip install --system pillow svglib reportlab
 
       - name: Generate icon assets
         shell: pwsh
